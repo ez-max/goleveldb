@@ -21,6 +21,7 @@ import (
 
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
+	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/storage"
 	"github.com/syndtr/goleveldb/leveldb/table"
@@ -165,7 +166,7 @@ func (ts *testingStorage) scanTable(fd storage.FileDesc, checksum bool) (corrupt
 
 	o := &opt.Options{
 		DisableLargeBatchTransaction: true,
-		Strict: opt.NoStrict,
+		Strict:                       opt.NoStrict,
 	}
 	if checksum {
 		o.Strict = opt.StrictBlockChecksum | opt.StrictReader
@@ -350,6 +351,7 @@ func main() {
 		DisableBlockCache:      !enableBlockCache,
 		ErrorIfExist:           true,
 		Compression:            opt.NoCompression,
+		Filter:                 filter.NewBloomFilter(10),
 	}
 	if enableCompression {
 		o.Compression = opt.DefaultCompression
@@ -427,8 +429,9 @@ func main() {
 			blockpool, _ := db.GetProperty("leveldb.blockpool")
 			writeDelay, _ := db.GetProperty("leveldb.writedelay")
 			ioStats, _ := db.GetProperty("leveldb.iostats")
-			log.Printf("> BlockCache=%s OpenedTables=%s AliveSnaps=%s AliveIter=%s BlockPool=%q WriteDelay=%q IOStats=%q",
-				cachedblock, openedtables, alivesnaps, aliveiters, blockpool, writeDelay, ioStats)
+			compCount, _ := db.GetProperty("leveldb.compcount")
+			log.Printf("> BlockCache=%s OpenedTables=%s AliveSnaps=%s AliveIter=%s BlockPool=%q WriteDelay=%q IOStats=%q CompCount=%q",
+				cachedblock, openedtables, alivesnaps, aliveiters, blockpool, writeDelay, ioStats, compCount)
 			log.Print("------------------------")
 		}
 	}()
